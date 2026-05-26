@@ -1,6 +1,7 @@
 PLAN.md
 node_modules/
 dist/
+.vite/
 server/data/notes/*
 server/data/uploads/*
 !server/data/notes/.gitkeep

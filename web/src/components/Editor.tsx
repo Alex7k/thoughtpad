@@ -61,7 +61,23 @@ export function Editor({ note, onStatusChange, onVimModeChange }: EditorProps) {
 
     cm?.on('vim-mode-change', handleVimModeChange)
 
+    const handlePastLineEndMouseDown = (event: MouseEvent) => {
+      if (!cm || !isPlainPrimaryClick(event)) return
+
+      const line = lineAtMouseY(view, event)
+      const lineEnd = view.coordsAtPos(line.to, -1) ?? view.coordsAtPos(line.to, 1)
+      if (!lineEnd || event.clientX <= lineEnd.right) return
+
+      event.preventDefault()
+      event.stopPropagation()
+      cm.setCursor(line.number - 1, Math.max(0, line.length - 1))
+      view.focus()
+    }
+
+    view.dom.addEventListener('mousedown', handlePastLineEndMouseDown, { capture: true })
+
     return () => {
+      view.dom.removeEventListener('mousedown', handlePastLineEndMouseDown, { capture: true })
       cm?.off('vim-mode-change', handleVimModeChange)
       view.destroy()
       provider.destroy()
@@ -112,6 +128,24 @@ function formatVimMode(event: VimModeEvent) {
   if (event.mode === 'visual' && event.subMode === 'linewise') return 'visual line'
   if (event.mode === 'visual' && event.subMode === 'blockwise') return 'visual block'
   return event.mode ?? 'normal'
+}
+
+function isPlainPrimaryClick(event: MouseEvent) {
+  return (
+    event.button === 0 &&
+    event.detail === 1 &&
+    !event.shiftKey &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey
+  )
+}
+
+function lineAtMouseY(view: EditorView, event: MouseEvent) {
+  const contentBox = view.contentDOM.getBoundingClientRect()
+  const x = Math.max(contentBox.left + 1, Math.min(event.clientX, contentBox.right - 1))
+  const position = view.posAtCoords({ x, y: event.clientY }, false)
+  return view.state.doc.lineAt(position)
 }
 
 async function convertImageToWebp(file: File) {
