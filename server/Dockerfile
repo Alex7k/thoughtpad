@@ -1,13 +1,13 @@
 FROM oven/bun:1 AS web-build
 WORKDIR /app/web
-COPY web/package.json web/package-lock.json* ./
+COPY web/package.json web/bun.lock ./
 RUN bun install
 COPY web/ ./
 RUN bun run build
 
 FROM oven/bun:1 AS server-deps
 WORKDIR /app
-COPY server/package.json server/bun.lockb* ./
+COPY server/package.json server/bun.lock ./
 RUN bun install --production
 
 FROM oven/bun:1
