@@ -115,7 +115,7 @@ const thoughtpadTheme = EditorView.theme(
       borderRight: '1px solid #2a2a2a'
     },
     '.cm-activeLine': {
-      backgroundColor: '#181818'
+      backgroundColor: 'rgba(255, 255, 255, 0.04)'
     },
     '.cm-activeLineGutter': {
       backgroundColor: '#181818'
