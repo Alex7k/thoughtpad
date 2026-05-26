@@ -44,6 +44,7 @@ header {
 
 .title {
   min-width: 0;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -76,12 +77,46 @@ header {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   color: #888888;
 }
 
 .vim-state {
   color: #e5e5e5;
+}
+
+.mode-toggle {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(64px, 1fr));
+  border: 1px solid #2a2a2a;
+}
+
+.mode-toggle button {
+  height: 26px;
+  border: 0;
+  border-radius: 0;
+  background: #181818;
+  color: #888888;
+  padding: 0 8px;
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.mode-toggle button + button {
+  border-left: 1px solid #2a2a2a;
+}
+
+.mode-toggle button:hover,
+.mode-toggle button:focus-visible {
+  color: #e5e5e5;
+  outline: none;
+}
+
+.mode-toggle button.active {
+  background: #2a2a2a;
+  color: #ffffff;
 }
 
 .icon-button {

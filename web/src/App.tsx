@@ -2,14 +2,22 @@ import { FormEvent, useCallback, useEffect, useRef, useMemo, useState } from 're
 import { Editor } from './components/Editor'
 import { checkSession, login } from './auth'
 import { listNotes, type NoteFile } from './api'
+import { isMobile } from './mobile'
+
+type InputMode = 'regular' | 'vim'
 
 export default function App() {
   const note = useMemo(() => decodeURIComponent(window.location.pathname.slice(1)) || 'home', [])
+  const desktop = useMemo(() => !isMobile(), [])
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
   const [status, setStatus] = useState('syncing')
-  const [vimMode, setVimMode] = useState('normal')
+  const [inputMode, setInputMode] = useState<InputMode>(() => {
+    const stored = window.localStorage.getItem('thoughtpad_input_mode')
+    return stored === 'regular' || stored === 'vim' ? stored : 'vim'
+  })
+  const [vimMode, setVimMode] = useState(desktop && inputMode === 'vim' ? 'normal' : 'regular')
   const [filePickerOpen, setFilePickerOpen] = useState(false)
   const [files, setFiles] = useState<NoteFile[]>([])
   const [filesError, setFilesError] = useState('')
@@ -42,6 +50,11 @@ export default function App() {
 
   const handleVimModeChange = useCallback((nextMode: string) => {
     setVimMode(nextMode)
+  }, [])
+
+  const handleInputModeChange = useCallback((nextMode: InputMode) => {
+    setInputMode(nextMode)
+    window.localStorage.setItem('thoughtpad_input_mode', nextMode)
   }, [])
 
   async function openFilePicker() {
@@ -123,12 +136,37 @@ export default function App() {
           </button>
         </div>
         <div className="status-group">
+          {desktop ? (
+            <div className="mode-toggle" aria-label="editor input mode">
+              <button
+                className={inputMode === 'regular' ? 'active' : ''}
+                type="button"
+                aria-pressed={inputMode === 'regular'}
+                onClick={() => handleInputModeChange('regular')}
+              >
+                regular
+              </button>
+              <button
+                className={inputMode === 'vim' ? 'active' : ''}
+                type="button"
+                aria-pressed={inputMode === 'vim'}
+                onClick={() => handleInputModeChange('vim')}
+              >
+                vim
+              </button>
+            </div>
+          ) : null}
           <span className="vim-state">{vimMode}</span>
           <span className="sync-state">{status}</span>
         </div>
       </header>
 
-      <Editor note={note} onStatusChange={handleStatusChange} onVimModeChange={handleVimModeChange} />
+      <Editor
+        note={note}
+        inputMode={desktop ? inputMode : 'regular'}
+        onStatusChange={handleStatusChange}
+        onVimModeChange={handleVimModeChange}
+      />
 
       {filePickerOpen ? (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setFilePickerOpen(false)}>

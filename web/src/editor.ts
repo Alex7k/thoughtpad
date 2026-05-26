@@ -39,6 +39,12 @@ export function createEditorState({ yText, provider, vimMode, onContentChange }:
   })
 }
 
+export function setEditorVimMode(view: EditorView, vimMode: boolean) {
+  view.dispatch({
+    effects: vimCompartment.reconfigure(vimMode ? vim() : [])
+  })
+}
+
 class ImageWidget extends WidgetType {
   constructor(private readonly src: string) {
     super()

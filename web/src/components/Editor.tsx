@@ -4,11 +4,13 @@ import { getCM } from '@replit/codemirror-vim'
 import { WebsocketProvider } from 'y-websocket'
 import * as Y from 'yjs'
 import { uploadImage } from '../api'
-import { createEditorState } from '../editor'
-import { isMobile } from '../mobile'
+import { createEditorState, setEditorVimMode } from '../editor'
+
+type InputMode = 'regular' | 'vim'
 
 type EditorProps = {
   note: string
+  inputMode: InputMode
   onStatusChange: (status: string) => void
   onVimModeChange: (mode: string) => void
 }
@@ -18,11 +20,16 @@ type VimModeEvent = {
   subMode?: string
 }
 
-export function Editor({ note, onStatusChange, onVimModeChange }: EditorProps) {
+export function Editor({ note, inputMode, onStatusChange, onVimModeChange }: EditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const inputModeRef = useRef(inputMode)
   const latestContentRef = useRef('')
   const [uploading, setUploading] = useState(false)
+
+  useEffect(() => {
+    inputModeRef.current = inputMode
+  }, [inputMode])
 
   useEffect(() => {
     const element = editorRef.current
@@ -32,7 +39,7 @@ export function Editor({ note, onStatusChange, onVimModeChange }: EditorProps) {
     const yText = document.getText('codemirror')
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const provider = new WebsocketProvider(`${protocol}//${window.location.host}/ws`, encodeURIComponent(note), document)
-    const vimMode = !isMobile()
+    const vimMode = inputMode === 'vim'
 
     provider.on('status', ({ status }: { status: string }) => {
       onStatusChange(status === 'connected' ? 'synced' : 'offline')
@@ -52,17 +59,13 @@ export function Editor({ note, onStatusChange, onVimModeChange }: EditorProps) {
 
     viewRef.current = view
     onStatusChange('syncing')
-    onVimModeChange(vimMode ? 'normal' : 'native')
-
-    const cm = vimMode ? getCM(view) : null
-    const handleVimModeChange = (event: VimModeEvent) => {
-      onVimModeChange(formatVimMode(event))
-    }
-
-    cm?.on('vim-mode-change', handleVimModeChange)
+    onVimModeChange(vimMode ? 'normal' : 'regular')
 
     const handlePastLineEndMouseDown = (event: MouseEvent) => {
-      if (!cm || !isPlainPrimaryClick(event)) return
+      if (inputModeRef.current !== 'vim' || !isPlainPrimaryClick(event)) return
+
+      const cm = getCM(view)
+      if (!cm) return
 
       const line = lineAtMouseY(view, event)
       const lineEnd = view.coordsAtPos(line.to, -1) ?? view.coordsAtPos(line.to, 1)
@@ -78,13 +81,36 @@ export function Editor({ note, onStatusChange, onVimModeChange }: EditorProps) {
 
     return () => {
       view.dom.removeEventListener('mousedown', handlePastLineEndMouseDown, { capture: true })
-      cm?.off('vim-mode-change', handleVimModeChange)
       view.destroy()
       provider.destroy()
       document.destroy()
       viewRef.current = null
     }
   }, [note, onStatusChange, onVimModeChange])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return
+
+    const vimMode = inputMode === 'vim'
+    setEditorVimMode(view, vimMode)
+    onVimModeChange(vimMode ? 'normal' : 'regular')
+  }, [inputMode, onVimModeChange])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || inputMode !== 'vim') return
+
+    const cm = getCM(view)
+    if (!cm) return
+
+    const handleVimModeChange = (event: VimModeEvent) => {
+      onVimModeChange(formatVimMode(event))
+    }
+
+    cm.on('vim-mode-change', handleVimModeChange)
+    return () => cm.off('vim-mode-change', handleVimModeChange)
+  }, [inputMode, onVimModeChange])
 
   useEffect(() => {
     const view = viewRef.current
