@@ -1,5 +1,6 @@
 services:
   thoughtpad:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: server/Dockerfile
