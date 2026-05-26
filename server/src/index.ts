@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import { handleLogin, handleLogout, isAuthenticated } from './auth'
-import { ensureDataDirs, normalizeNoteName, readNote } from './notes'
+import { ensureDataDirs, listNotes, normalizeNoteName, readNote } from './notes'
 import { addSocket, handleSocketMessage, removeSocket, replaceRoomText, type SocketData } from './persistence'
 import { handleUpload, serveUpload } from './uploads'
 
@@ -36,6 +36,11 @@ const server = Bun.serve<SocketData>({
     }
 
     if (url.pathname === '/api/session') return Response.json({ ok: true })
+
+    if (url.pathname === '/api/notes') {
+      if (request.method !== 'GET') return new Response('method not allowed', { status: 405 })
+      return Response.json({ notes: await listNotes() })
+    }
 
     if (url.pathname.startsWith('/api/note/')) {
       try {

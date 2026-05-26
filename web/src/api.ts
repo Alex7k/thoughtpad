@@ -41,3 +41,21 @@ export async function uploadImage(blob: Blob) {
 
   return (await response.json()) as { path: string }
 }
+
+export type NoteFile = {
+  name: string
+  modifiedAt: string
+  size: number
+}
+
+export async function listNotes() {
+  const response = await fetch('/api/notes', {
+    credentials: 'include'
+  })
+
+  if (!response.ok) {
+    throw new Error('failed to list notes')
+  }
+
+  return (await response.json()) as { notes: NoteFile[] }
+}

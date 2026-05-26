@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
 const dataDir = process.env.DATA_DIR ?? join(process.cwd(), 'data')
@@ -54,4 +54,24 @@ export async function writeNote(noteName: string, content: string) {
   const filePath = notePath(noteName)
   await mkdir(dirname(filePath), { recursive: true })
   await writeFile(filePath, content, 'utf8')
+}
+
+export async function listNotes() {
+  const entries = await readdir(notesDir, { withFileTypes: true })
+  const notes = await Promise.all(
+    entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+      .map(async (entry) => {
+        const fileStat = await stat(join(notesDir, entry.name))
+        const encodedName = entry.name.slice(0, -'.md'.length)
+
+        return {
+          name: decodeURIComponent(encodedName),
+          modifiedAt: fileStat.mtime.toISOString(),
+          size: fileStat.size
+        }
+      })
+  )
+
+  return notes.sort((left, right) => Date.parse(right.modifiedAt) - Date.parse(left.modifiedAt))
 }
