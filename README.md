@@ -45,6 +45,55 @@ Open `http://localhost:4000`.
 
 The compose file mounts `./server/data` into the container at `/app/data`, so notes and uploads survive container rebuilds.
 
+## Published Docker Image
+
+GitHub Actions builds the production image on pull requests, then pushes it to GitHub Container Registry on `main` and version tags:
+
+```txt
+ghcr.io/alex7k/thoughtpad:main
+ghcr.io/alex7k/thoughtpad:sha-<commit>
+ghcr.io/alex7k/thoughtpad:<version>
+```
+
+Create a release tag like `v0.1.0` to publish semver tags such as `0.1.0` and `0.1`.
+
+To run the published image instead of building locally, use this compose file:
+
+```yaml
+services:
+  thoughtpad:
+    image: ghcr.io/alex7k/thoughtpad:main
+    restart: unless-stopped
+    ports:
+      - "4000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./server/data:/app/data
+```
+
+Create `.env` on the host that runs the container:
+
+```env
+PASSWORD=change_me
+PORT=3000
+SESSION_SECRET=change_me
+```
+
+Use a strong password and generate a long session secret before deploying:
+
+```sh
+openssl rand -hex 32
+```
+
+Start (pulls the image automatically):
+
+```sh
+docker compose up -d
+```
+
+Because the GitHub repository is public, Docker can pull the GHCR image without a login once the package is public.
+
 ## Local Development
 
 Install dependencies:
