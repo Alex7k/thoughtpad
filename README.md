@@ -41,7 +41,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:4000`.
 
 The compose file mounts `./server/data` into the container at `/app/data`, so notes and uploads survive container rebuilds.
 
