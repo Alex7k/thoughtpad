@@ -1,0 +1,11 @@
+services:
+  thoughtpad:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./server/data:/app/data
