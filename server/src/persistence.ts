@@ -13,7 +13,13 @@ export type SocketData = {
   controlledAwarenessClients: number[]
 }
 
-type Socket = ServerWebSocket<SocketData>
+type Socket = Bun.ServerWebSocket<SocketData>
+
+type AwarenessChange = {
+  added: number[]
+  updated: number[]
+  removed: number[]
+}
 
 type Room = {
   doc: Y.Doc
@@ -49,7 +55,7 @@ function createRoom(noteName: string) {
     scheduleSave(noteName, room)
   })
 
-  awareness.on('update', ({ added, updated, removed }: awarenessProtocol.AwarenessUpdate, origin: unknown) => {
+  awareness.on('update', ({ added, updated, removed }: AwarenessChange, origin: unknown) => {
     const changedClients = added.concat(updated, removed)
     const update = awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients)
     const encoder = encoding.createEncoder()
@@ -129,7 +135,7 @@ export function handleSocketMessage(socket: Socket, data: string | Buffer | Arra
 
   if (messageType === messageAwareness) {
     const update = decoding.readVarUint8Array(decoder)
-    const clients = awarenessProtocol.decodeAwarenessUpdate(update).map(({ clientID }) => clientID)
+    const clients = decodeAwarenessClientIds(update)
     socket.data.controlledAwarenessClients = Array.from(
       new Set(socket.data.controlledAwarenessClients.concat(clients))
     )
@@ -165,4 +171,18 @@ function scheduleSave(noteName: string, room: Room) {
   room.saveTimer = setTimeout(() => {
     void writeNote(noteName, room.text.toString())
   }, 250)
+}
+
+function decodeAwarenessClientIds(update: Uint8Array) {
+  const decoder = decoding.createDecoder(update)
+  const length = decoding.readVarUint(decoder)
+  const clients: number[] = []
+
+  for (let index = 0; index < length; index += 1) {
+    clients.push(decoding.readVarUint(decoder))
+    decoding.readVarUint(decoder)
+    decoding.readVarString(decoder)
+  }
+
+  return clients
 }

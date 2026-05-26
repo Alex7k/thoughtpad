@@ -1,1 +1,8 @@
 PLAN.md
+node_modules/
+dist/
+server/data/notes/*
+server/data/uploads/*
+!server/data/notes/.gitkeep
+!server/data/uploads/.gitkeep
+.env
