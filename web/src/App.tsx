@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useRef, useMemo, useState } from 'react'
 import { Editor } from './components/Editor'
 import { checkSession, login } from './auth'
 import { listNotes, type NoteFile } from './api'
@@ -14,6 +14,9 @@ export default function App() {
   const [files, setFiles] = useState<NoteFile[]>([])
   const [filesError, setFilesError] = useState('')
   const [filesLoading, setFilesLoading] = useState(false)
+  const [newNoteName, setNewNoteName] = useState('')
+  const [newNoteError, setNewNoteError] = useState('')
+  const newNoteInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     void checkSession().then(setAuthenticated)
@@ -29,6 +32,7 @@ export default function App() {
     }
 
     window.addEventListener('keydown', handleKeyDown)
+    window.setTimeout(() => newNoteInputRef.current?.focus(), 0)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [filePickerOpen])
 
@@ -43,6 +47,7 @@ export default function App() {
   async function openFilePicker() {
     setFilePickerOpen(true)
     setFilesError('')
+    setNewNoteError('')
     setFilesLoading(true)
 
     try {
@@ -57,6 +62,19 @@ export default function App() {
 
   function openNote(nextNote: string) {
     window.location.assign(`/${encodeURIComponent(nextNote)}`)
+  }
+
+  function createNote(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const nextNote = newNoteName.trim()
+    const error = validateNoteName(nextNote)
+    if (error) {
+      setNewNoteError(error)
+      return
+    }
+
+    openNote(nextNote)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -128,6 +146,23 @@ export default function App() {
               </button>
             </div>
 
+            <form className="new-note-form" onSubmit={createNote}>
+              <input
+                ref={newNoteInputRef}
+                aria-label="new note name"
+                value={newNoteName}
+                placeholder="new note"
+                onChange={(event) => {
+                  setNewNoteName(event.target.value)
+                  setNewNoteError('')
+                }}
+              />
+              <button type="submit" aria-label="create note">
+                +
+              </button>
+            </form>
+            {newNoteError ? <div className="new-note-error">{newNoteError}</div> : null}
+
             <div className="file-list">
               {filesLoading ? <div className="file-list-message">loading</div> : null}
               {filesError ? <div className="file-list-message">{filesError}</div> : null}
@@ -158,4 +193,21 @@ function formatModified(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short'
   }).format(new Date(value))
+}
+
+function validateNoteName(name: string) {
+  if (!name) return 'name required'
+  if (name.length > 128) return 'name too long'
+  if (
+    name === '.' ||
+    name === '..' ||
+    name.includes('/') ||
+    name.includes('\\') ||
+    name.split('.').some((part) => part === '..') ||
+    /[\x00-\x1f\x7f]/.test(name)
+  ) {
+    return 'invalid note name'
+  }
+
+  return ''
 }

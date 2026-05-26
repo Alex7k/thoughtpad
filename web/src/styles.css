@@ -244,6 +244,52 @@ header {
   font-weight: 800;
 }
 
+.new-note-form {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.new-note-form input,
+.new-note-form button {
+  height: 36px;
+  border: 1px solid #2a2a2a;
+  border-radius: 0;
+  background: #111111;
+  color: #e5e5e5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.new-note-form input {
+  min-width: 0;
+  padding: 0 9px;
+  outline: none;
+}
+
+.new-note-form button {
+  cursor: pointer;
+  padding: 0;
+}
+
+.new-note-form input:focus,
+.new-note-form button:hover,
+.new-note-form button:focus-visible {
+  border-color: #5e81ac;
+  outline: none;
+}
+
+.new-note-error {
+  flex: 0 0 auto;
+  padding: 0 8px 8px;
+  color: #d08770;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
 .file-list {
   min-height: 0;
   overflow-y: auto;
