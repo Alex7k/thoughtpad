@@ -7,6 +7,7 @@ import { readNote, writeNote } from './notes'
 
 const messageSync = 0
 const messageAwareness = 1
+const messageQueryAwareness = 3
 
 export type SocketData = {
   noteName: string
@@ -94,16 +95,7 @@ export async function addSocket(socket: Socket, noteName: string) {
   syncProtocol.writeSyncStep1(encoder, room.doc)
   send(socket, encoding.toUint8Array(encoder))
 
-  const states = room.awareness.getStates()
-  if (states.size > 0) {
-    const awarenessEncoder = encoding.createEncoder()
-    encoding.writeVarUint(awarenessEncoder, messageAwareness)
-    encoding.writeVarUint8Array(
-      awarenessEncoder,
-      awarenessProtocol.encodeAwarenessUpdate(room.awareness, Array.from(states.keys()))
-    )
-    send(socket, encoding.toUint8Array(awarenessEncoder))
-  }
+  sendAwarenessStates(socket, room)
 }
 
 export function removeSocket(socket: Socket) {
@@ -141,6 +133,10 @@ export function handleSocketMessage(socket: Socket, data: string | Buffer | Arra
     )
     awarenessProtocol.applyAwarenessUpdate(room.awareness, update, socket)
   }
+
+  if (messageType === messageQueryAwareness) {
+    sendAwarenessStates(socket, room)
+  }
 }
 
 function broadcastDocUpdate(room: Room, update: Uint8Array, origin: unknown) {
@@ -164,6 +160,19 @@ function send(socket: Socket, message: Uint8Array) {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(message)
   }
+}
+
+function sendAwarenessStates(socket: Socket, room: Room) {
+  const states = room.awareness.getStates()
+  if (states.size === 0) return
+
+  const awarenessEncoder = encoding.createEncoder()
+  encoding.writeVarUint(awarenessEncoder, messageAwareness)
+  encoding.writeVarUint8Array(
+    awarenessEncoder,
+    awarenessProtocol.encodeAwarenessUpdate(room.awareness, Array.from(states.keys()))
+  )
+  send(socket, encoding.toUint8Array(awarenessEncoder))
 }
 
 function scheduleSave(noteName: string, room: Room) {
