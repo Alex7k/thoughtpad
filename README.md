@@ -34,10 +34,13 @@ SESSION_SECRET=change_me
 
 Use a real password and a long random `SESSION_SECRET` before exposing the app to a network.
 
-## Run With Docker
+## Run With Docker From This Repo
+
+Use this if you cloned the repository and want to build the image locally:
 
 ```sh
 cp .env.example .env
+# (now update the 'change_me' values in .env)
 docker compose up --build
 ```
 
@@ -47,7 +50,9 @@ The compose file mounts `./server/data` into the container at `/app/data`, so no
 
 ## Published Docker Image
 
-GitHub Actions builds the production image on pull requests, then pushes it to GitHub Container Registry on `main` and version tags:
+Use this if you want to run Thoughtpad without cloning the repository.
+
+GitHub Actions publishes images to GitHub Container Registry:
 
 ```txt
 ghcr.io/alex7k/thoughtpad:main
@@ -55,9 +60,21 @@ ghcr.io/alex7k/thoughtpad:sha-<commit>
 ghcr.io/alex7k/thoughtpad:<version>
 ```
 
-Create a release tag like `v0.1.0` to publish semver tags such as `0.1.0` and `0.1`.
+Try the published image directly (you need to have `docker` installed on your system first):
 
-To run the published image instead of building locally, use this compose file:
+```sh
+mkdir -p server/data
+docker run --rm \
+  -p 4000:3000 \
+  -e PASSWORD='change_me' \
+  -e SESSION_SECRET="$(openssl rand -hex 32)" \
+  -v "$PWD/server/data:/app/data" \
+  ghcr.io/alex7k/thoughtpad:main
+```
+
+Open `http://localhost:4000`.
+
+For a persistent deployment, create `compose.yml`:
 
 ```yaml
 services:
@@ -72,7 +89,7 @@ services:
       - ./server/data:/app/data
 ```
 
-Create `.env` on the host that runs the container:
+Create `.env` next to it:
 
 ```env
 PASSWORD=change_me
@@ -86,13 +103,14 @@ Use a strong password and generate a long session secret before deploying:
 openssl rand -hex 32
 ```
 
-Start (pulls the image automatically):
+Then start the container:
 
 ```sh
+docker compose pull
 docker compose up -d
 ```
 
-Because the GitHub repository is public, Docker can pull the GHCR image without a login once the package is public.
+Create a release tag like `v0.1.0` to publish semver tags such as `0.1.0` and `0.1`.
 
 ## Local Development
 
@@ -121,6 +139,10 @@ npm run dev
 ```
 
 Open `http://localhost:5173`. Vite proxies `/api`, `/uploads`, and `/ws` to `localhost:3000`.
+
+## Publishing Images
+
+The `main` image is published automatically when changes are pushed to `main`. Create a release tag like `v0.1.0` to publish semver tags such as `0.1.0` and `0.1`.
 
 ## Build
 
