@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { EditorView } from 'codemirror'
+import { getCM } from '@replit/codemirror-vim'
 import { WebsocketProvider } from 'y-websocket'
 import * as Y from 'yjs'
 import { uploadImage } from '../api'
@@ -9,9 +10,15 @@ import { isMobile } from '../mobile'
 type EditorProps = {
   note: string
   onStatusChange: (status: string) => void
+  onVimModeChange: (mode: string) => void
 }
 
-export function Editor({ note, onStatusChange }: EditorProps) {
+type VimModeEvent = {
+  mode?: string
+  subMode?: string
+}
+
+export function Editor({ note, onStatusChange, onVimModeChange }: EditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
   const latestContentRef = useRef('')
@@ -25,6 +32,7 @@ export function Editor({ note, onStatusChange }: EditorProps) {
     const yText = document.getText('codemirror')
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const provider = new WebsocketProvider(`${protocol}//${window.location.host}/ws`, encodeURIComponent(note), document)
+    const vimMode = !isMobile()
 
     provider.on('status', ({ status }: { status: string }) => {
       onStatusChange(status === 'connected' ? 'synced' : 'offline')
@@ -35,7 +43,7 @@ export function Editor({ note, onStatusChange }: EditorProps) {
       state: createEditorState({
         yText,
         provider,
-        vimMode: !isMobile(),
+        vimMode,
         onContentChange(content) {
           latestContentRef.current = content
         }
@@ -44,14 +52,23 @@ export function Editor({ note, onStatusChange }: EditorProps) {
 
     viewRef.current = view
     onStatusChange('syncing')
+    onVimModeChange(vimMode ? 'normal' : 'native')
+
+    const cm = vimMode ? getCM(view) : null
+    const handleVimModeChange = (event: VimModeEvent) => {
+      onVimModeChange(formatVimMode(event))
+    }
+
+    cm?.on('vim-mode-change', handleVimModeChange)
 
     return () => {
+      cm?.off('vim-mode-change', handleVimModeChange)
       view.destroy()
       provider.destroy()
       document.destroy()
       viewRef.current = null
     }
-  }, [note, onStatusChange])
+  }, [note, onStatusChange, onVimModeChange])
 
   useEffect(() => {
     const view = viewRef.current
@@ -89,6 +106,12 @@ export function Editor({ note, onStatusChange }: EditorProps) {
       <div ref={editorRef} className="editor-host" />
     </main>
   )
+}
+
+function formatVimMode(event: VimModeEvent) {
+  if (event.mode === 'visual' && event.subMode === 'linewise') return 'visual line'
+  if (event.mode === 'visual' && event.subMode === 'blockwise') return 'visual block'
+  return event.mode ?? 'normal'
 }
 
 async function convertImageToWebp(file: File) {

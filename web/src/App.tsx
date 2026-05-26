@@ -8,6 +8,7 @@ export default function App() {
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
   const [status, setStatus] = useState('syncing')
+  const [vimMode, setVimMode] = useState('normal')
 
   useEffect(() => {
     void checkSession().then(setAuthenticated)
@@ -15,6 +16,10 @@ export default function App() {
 
   const handleStatusChange = useCallback((nextStatus: string) => {
     setStatus(nextStatus)
+  }, [])
+
+  const handleVimModeChange = useCallback((nextMode: string) => {
+    setVimMode(nextMode)
   }, [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -60,10 +65,13 @@ export default function App() {
           <span>thoughtpad</span>
           <span className="note-name">/{note}</span>
         </div>
-        <span className="sync-state">{status}</span>
+        <div className="status-group">
+          <span className="vim-state">{vimMode}</span>
+          <span className="sync-state">{status}</span>
+        </div>
       </header>
 
-      <Editor note={note} onStatusChange={handleStatusChange} />
+      <Editor note={note} onStatusChange={handleStatusChange} onVimModeChange={handleVimModeChange} />
     </div>
   )
 }

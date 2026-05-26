@@ -19,12 +19,12 @@ type EditorOptions = {
 export function createEditorState({ yText, provider, vimMode, onContentChange }: EditorOptions) {
   return EditorState.create({
     extensions: [
+      vimCompartment.of(vimMode ? vim() : []),
       basicSetup,
       markdown(),
       thoughtpadTheme,
       inlineImages,
       yCollab(yText, provider.awareness),
-      vimCompartment.of(vimMode ? vim() : []),
       EditorView.lineWrapping,
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
