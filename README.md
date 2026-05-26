@@ -1,5 +1,7 @@
 # thoughtpad
 
+![Screenshot of the web interface](img/screenshot.png)
+
 Minimal self-hosted synced text pad.
 
 Thoughtpad is a single-user Markdown-first note editor. The URL is the note name, notes are stored as plain files, images are stored on disk, and live editing is synced through Yjs over a Bun WebSocket server.
