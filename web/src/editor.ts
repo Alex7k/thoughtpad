@@ -1,8 +1,10 @@
 import { basicSetup, EditorView } from 'codemirror'
 import { markdown } from '@codemirror/lang-markdown'
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { Compartment, EditorState, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from '@codemirror/view'
 import { vim } from '@replit/codemirror-vim'
+import { tags } from '@lezer/highlight'
 import { yCollab } from 'y-codemirror.next'
 import type { WebsocketProvider } from 'y-websocket'
 import type * as Y from 'yjs'
@@ -22,6 +24,7 @@ export function createEditorState({ yText, provider, vimMode, onContentChange }:
       vimCompartment.of(vimMode ? vim() : []),
       basicSetup,
       markdown(),
+      syntaxHighlighting(linkHighlight),
       thoughtpadTheme,
       inlineImages,
       yCollab(yText, provider.awareness),
@@ -132,3 +135,14 @@ const thoughtpadTheme = EditorView.theme(
   },
   { dark: true }
 )
+
+const linkHighlight = HighlightStyle.define([
+  {
+    tag: [tags.link, tags.labelName],
+    color: '#9be66d'
+  },
+  {
+    tag: [tags.url, tags.processingInstruction],
+    color: '#55a7ff'
+  }
+])
