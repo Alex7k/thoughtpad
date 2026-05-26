@@ -17,43 +17,6 @@ Thoughtpad is a single-user Markdown-first note editor. The URL is the note name
 - Native mobile editing behavior on iPhone and Android.
 - No accounts, OAuth, database, telemetry, sidebars, tags, dashboards, or SSR.
 
-## Repository Layout
-
-```txt
-thoughtpad/
-├── docker-compose.yml
-├── .env.example
-├── README.md
-├── server/
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── src/
-│   │   ├── index.ts
-│   │   ├── auth.ts
-│   │   ├── notes.ts
-│   │   ├── uploads.ts
-│   │   └── persistence.ts
-│   └── data/
-│       ├── notes/
-│       └── uploads/
-└── web/
-    ├── package.json
-    ├── vite.config.ts
-    ├── tsconfig.json
-    ├── index.html
-    └── src/
-        ├── main.tsx
-        ├── App.tsx
-        ├── editor.ts
-        ├── api.ts
-        ├── auth.ts
-        ├── mobile.ts
-        ├── styles.css
-        └── components/
-            └── Editor.tsx
-```
-
 ## Environment
 
 Create `.env` from `.env.example`:
