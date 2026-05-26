@@ -27,6 +27,7 @@ export function createEditorState({ yText, provider, vimMode, onContentChange }:
       syntaxHighlighting(linkHighlight),
       thoughtpadTheme,
       inlineImages,
+      headingLineStyle,
       yCollab(yText, provider.awareness),
       EditorView.lineWrapping,
       EditorView.updateListener.of((update) => {
@@ -75,6 +76,45 @@ const inlineImages = ViewPlugin.fromClass(
     decorations: (plugin) => plugin.decorations
   }
 )
+
+const headingLineStyle = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet
+
+    constructor(view: EditorView) {
+      this.decorations = buildHeadingLineDecorations(view)
+    }
+
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.viewportChanged) {
+        this.decorations = buildHeadingLineDecorations(update.view)
+      }
+    }
+  },
+  {
+    decorations: (plugin) => plugin.decorations
+  }
+)
+
+function buildHeadingLineDecorations(view: EditorView) {
+  const builder = new RangeSetBuilder<Decoration>()
+
+  for (const { from, to } of view.visibleRanges) {
+    const startLine = view.state.doc.lineAt(from)
+    const endLine = view.state.doc.lineAt(to)
+
+    for (let lineNumber = startLine.number; lineNumber <= endLine.number; lineNumber += 1) {
+      const line = view.state.doc.line(lineNumber)
+      const match = /^(#{1,6})\s/.exec(line.text)
+      if (!match) continue
+
+      const level = Math.min(match[1].length, 3)
+      builder.add(line.from, line.from, Decoration.line({ class: `cm-heading-line cm-heading-line-${level}` }))
+    }
+  }
+
+  return builder.finish()
+}
 
 function buildImageDecorations(view: EditorView) {
   const builder = new RangeSetBuilder<Decoration>()
@@ -128,6 +168,24 @@ const thoughtpadTheme = EditorView.theme(
     },
     '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': {
       backgroundColor: '#2d4f67'
+    },
+    '.cm-heading-line-1': {
+      color: '#ffffff',
+      fontSize: '1.35em',
+      fontWeight: '900',
+      lineHeight: '1.85'
+    },
+    '.cm-heading-line-2': {
+      color: '#ffffff',
+      fontSize: '1.22em',
+      fontWeight: '900',
+      lineHeight: '1.7'
+    },
+    '.cm-heading-line-3': {
+      color: '#ffffff',
+      fontSize: '1.1em',
+      fontWeight: '900',
+      lineHeight: '1.55'
     },
     '&.cm-focused': {
       outline: 'none'
