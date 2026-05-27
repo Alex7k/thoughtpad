@@ -110,8 +110,6 @@ docker compose pull
 docker compose up -d
 ```
 
-Create a release tag like `v0.1.0` to publish semver tags such as `0.1.0` and `0.1`.
-
 ## Local Development
 
 Install dependencies:
